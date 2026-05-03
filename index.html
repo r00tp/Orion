@@ -562,7 +562,7 @@ tr.clickable:hover td{background:rgba(255,255,255,.015);cursor:default}
       <button onclick="document.getElementById('importFileDash').click()" style="padding:7px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text-dim);cursor:pointer;font-size:11px;font-family:var(--fb)" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'">⬆ Import</button>
       <input type="file" id="importFileDash" accept=".json" style="display:none" onchange="importData(event)">
     </div>
-    <div style="font-size:10px;color:var(--text-muted);font-family:var(--fm);letter-spacing:.06em">© 2026 r00tp &nbsp;·&nbsp; v1.18</div>
+    <div style="font-size:10px;color:var(--text-muted);font-family:var(--fm);letter-spacing:.06em">© 2026 r00tp &nbsp;·&nbsp; v1.19</div>
   </div>
   </div>
 
@@ -590,9 +590,7 @@ tr.clickable:hover td{background:rgba(255,255,255,.015);cursor:default}
         <button class="sec-tab active" onclick="switchSecTab('bourse','consolide',this)">Vue consolidée</button>
         <button class="sec-tab" onclick="switchSecTab('bourse','lots',this)">Positions détaillées</button>
         <button class="sec-tab" onclick="switchSecTab('bourse','dividendes',this)">💰 Dividendes</button>
-        <div style="margin-left:auto;padding-right:8px;display:flex;gap:6px" id="bourse-div-actions" style="display:none">
-          <button class="btn btn-outline btn-xs" id="div-refresh-btn" onclick="fetchAllDividends()" title="Actualiser données dividendes"><span id="div-refresh-icon">↻</span></button>
-        </div>
+
       </div>
       <div id="bourse-tab-consolide" class="panel-body"></div>
       <div id="bourse-tab-lots" class="panel-body" style="display:none"></div>
@@ -2375,17 +2373,20 @@ function renderPe(){
           +'<div style="font-size:12px;font-family:var(--fm);color:'+plCl+'">'+(pl>=0?'+':'')+fmt(pl)+'</div>'
         +'</div>'
       +'</div>'
-      // Metrics grid
-      +'<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:12px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-bottom:12px">'
+      // Metrics grid — souscStr declared here to avoid breaking return chain
+      +(function(){
         var souscStr=d.commitment>0?fmt(d.commitment):'—';
-        +['Souscription','Appelé','TVPI','DPI','TRI'].map(function(label,i){
-          const vals=[souscStr,fmt(d.calledCapital||0),(tvpi!=null?tvpi.toFixed(2)+'x':'—'),(dpi!=null?dpi.toFixed(2)+'x':'—'),(irr!=null?(irr*100).toFixed(1)+'%':'—')];
-          const colors=['','','var(--gold)','var(--text)','var(--green)'];
-          return'<div style="text-align:center"><div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);font-family:var(--fm);margin-bottom:4px">'+label+'</div>'
-            +'<div style="font-family:var(--fm);font-size:13px;color:'+(colors[i]||'var(--text)')+'">'+vals[i]+'</div></div>';
-        }).join('')
-      +'</div>'
-      // Cash flows journal header + add button
+        var metricLabels=['Souscription','Appelé','TVPI','DPI','TRI'];
+        var metricVals=[souscStr,fmt(d.calledCapital||0),(tvpi!=null?tvpi.toFixed(2)+'x':'—'),(dpi!=null?dpi.toFixed(2)+'x':'—'),(irr!=null?(irr*100).toFixed(1)+'%':'—')];
+        var metricColors=['','','var(--gold)','var(--text)','var(--green)'];
+        return'<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:12px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-bottom:12px">'
+          +metricLabels.map(function(label,i){
+            return'<div style="text-align:center"><div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);font-family:var(--fm);margin-bottom:4px">'+label+'</div>'
+              +'<div style="font-family:var(--fm);font-size:13px;color:'+(metricColors[i]||'var(--text)')+'">'+metricVals[i]+'</div></div>';
+          }).join('')
+        +'</div>';
+      }())
+      // Cash flows journal header      // Cash flows journal header + add button
       +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
         +'<div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);font-family:var(--fm)">Flux de trésorerie ('+( d.cashflows||[]).length+')</div>'
         +'<div style="display:flex;gap:6px">'
@@ -3287,7 +3288,7 @@ window.addEventListener('resize',function(){
       <div><div class="plus-sheet-name">Importer</div><div class="plus-sheet-desc">Charger un fichier JSON</div></div>
     </div>
     <input type="file" id="importFileMob" accept=".json" style="display:none" onchange="importData(event)">
-    <div style="padding:14px 22px 4px;font-size:10px;color:var(--text-muted);font-family:var(--fm);text-align:center">© 2026 r00tp · v1.18</div>
+    <div style="padding:14px 22px 4px;font-size:10px;color:var(--text-muted);font-family:var(--fm);text-align:center">© 2026 r00tp · v1.19</div>
   </div>
 </div>
 
