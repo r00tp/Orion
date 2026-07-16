@@ -617,7 +617,7 @@ tr.clickable:hover td{background:rgba(255,255,255,.015);cursor:default}
         <span>💾</span><span>Sauvegarder</span>
       </button>
     </div>
-    <div style="font-size:10px;color:var(--text-muted);font-family:var(--fm);letter-spacing:.06em">© 2026 r00tp &nbsp;·&nbsp; v1.21</div>
+    <div style="font-size:10px;color:var(--text-muted);font-family:var(--fm);letter-spacing:.06em">© 2026 r00tp &nbsp;·&nbsp; v1.22</div>
   </div>
   </div>
 
@@ -1735,7 +1735,7 @@ function deleteDividendReceived(id){
 
 // ── Constants ──
 const GDRIVE_FILE_NAME = 'orion_data.json';
-const GDRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+const GDRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file';
 const GDRIVE_CLIENT_KEY = 'orion_gdrive_client_id';  // localStorage key for client ID
 const GDRIVE_TOKEN_KEY  = 'orion_gdrive_token';       // sessionStorage key for access token
 const GDRIVE_FILE_KEY   = 'orion_gdrive_file_id';     // localStorage key for known file ID
@@ -1878,7 +1878,7 @@ async function gdriveSave(){
       );
     } else {
       // Create new file in appDataFolder (private to this app)
-      const meta = JSON.stringify({name: GDRIVE_FILE_NAME, parents:['root']});
+      const meta = JSON.stringify({name: GDRIVE_FILE_NAME, parents:['appDataFolder']});
       const form = new FormData();
       form.append('metadata', new Blob([meta],{type:'application/json'}));
       form.append('file', blob);
@@ -1908,7 +1908,7 @@ async function gdriveSave(){
 async function gdriveFindOrNull(){
   const q = encodeURIComponent("name='"+GDRIVE_FILE_NAME+"' and trashed=false");
   const r = await fetch(
-    'https://www.googleapis.com/drive/v3/files?spaces=drive&q='+q+'&fields=files(id,name,parents)',
+    'https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q='+q+'&fields=files(id,name)',
     {headers:{Authorization:'Bearer '+gdriveToken}}
   );
   if(r.status===401){ gdriveTokenExpired(); return null; }
@@ -3696,7 +3696,7 @@ window.addEventListener('resize',function(){
       <div><div class="plus-sheet-name">Importer</div><div class="plus-sheet-desc">Charger un fichier JSON</div></div>
     </div>
     <input type="file" id="importFileMob" accept=".json" style="display:none" onchange="importData(event)">
-    <div style="padding:14px 22px 4px;font-size:10px;color:var(--text-muted);font-family:var(--fm);text-align:center">© 2026 r00tp · v1.21</div>
+    <div style="padding:14px 22px 4px;font-size:10px;color:var(--text-muted);font-family:var(--fm);text-align:center">© 2026 r00tp · v1.22</div>
   </div>
 </div>
 
