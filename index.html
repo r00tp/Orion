@@ -617,7 +617,7 @@ tr.clickable:hover td{background:rgba(255,255,255,.015);cursor:default}
         <span>💾</span><span>Sauvegarder</span>
       </button>
     </div>
-    <div style="font-size:10px;color:var(--text-muted);font-family:var(--fm);letter-spacing:.06em">© 2026 r00tp &nbsp;·&nbsp; v1.22</div>
+    <div style="font-size:10px;color:var(--text-muted);font-family:var(--fm);letter-spacing:.06em">© 2026 r00tp &nbsp;·&nbsp; v1.23</div>
   </div>
   </div>
 
@@ -1103,6 +1103,7 @@ async function fetchYahooPrice(ticker){
   const yU2='https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(ticker)+'?interval=1d&range=1d';
   const yU1='https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(ticker)+'?interval=1d&range=1d';
   const stU='https://stooq.com/q/l/?s='+encodeURIComponent(toStooqT(ticker))+'&f=sd2t2ohlcv&h&e=csv';
+  const wp='https://orion-proxy.nn9f52rckv.workers.dev/?url=';
   const ao1='https://api.allorigins.win/get?url=';
   const ao2='https://api.allorigins.win/raw?url=';
   const cp='https://corsproxy.io/?url=';
@@ -1124,25 +1125,73 @@ async function fetchYahooPrice(ticker){
     return{price:p,ccy:tickerCcy(ticker)};
   }
 
-  // Proxy-wrapped attempts only — direct requests always fail from remote origin
+    // Worker Cloudflare en priorité (fiable), proxys publics en repli
   const attempts=[
+    // Yahoo via le Worker Cloudflare dédié
+    async function(){
+      const r=await fetch(wp+encodeURIComponent(yU2),{signal:AbortSignal.timeout(10000)});
+      if(!r.ok)throw 0;
+      return exC(await r.json());
+    },
+    // Stooq via le Worker Cloudflare dédié
+    async function(){
+      const r=await fetch(wp+encodeURIComponent(stU),{signal:AbortSignal.timeout(10000)});
+      if(!r.ok)throw 0;
+      return exS(await r.text());
+    },
     // Yahoo via allorigins /get (JSON wrapper)
-    async function(){const r=await fetch(ao1+encodeURIComponent(yU2),{signal:AbortSignal.timeout(12000)});if(!r.ok)throw 0;return exC(JSON.parse((await r.json()).contents));},
+    async function(){
+      const r=await fetch(ao1+encodeURIComponent(yU2),{signal:AbortSignal.timeout(12000)});
+      if(!r.ok)throw 0;
+      return exC(JSON.parse((await r.json()).contents));
+    },
     // Yahoo via allorigins /raw (plain JSON)
-    async function(){const r=await fetch(ao2+encodeURIComponent(yU1),{signal:AbortSignal.timeout(12000)});if(!r.ok)throw 0;return exCraw(await r.text());},
+    async function(){
+      const r=await fetch(ao2+encodeURIComponent(yU1),{signal:AbortSignal.timeout(12000)});
+      if(!r.ok)throw 0;
+      return exCraw(await r.text());
+    },
     // Yahoo via corsproxy.io
-    async function(){const r=await fetch(cp+encodeURIComponent(yU2),{signal:AbortSignal.timeout(12000)});if(!r.ok)throw 0;return exC(await r.json());},
+    async function(){
+      const r=await fetch(cp+encodeURIComponent(yU2),{signal:AbortSignal.timeout(12000)});
+      if(!r.ok)throw 0;
+      return exC(await r.json());
+    },
     // Yahoo via codetabs proxy
-    async function(){const r=await fetch(ct+encodeURIComponent(yU2),{signal:AbortSignal.timeout(12000)});if(!r.ok)throw 0;return exCraw(await r.text());},
+    async function(){
+      const r=await fetch(ct+encodeURIComponent(yU2),{signal:AbortSignal.timeout(12000)});
+      if(!r.ok)throw 0;
+      return exCraw(await r.text());
+    },
     // Stooq via allorigins /get
-    async function(){const r=await fetch(ao1+encodeURIComponent(stU),{signal:AbortSignal.timeout(12000)});if(!r.ok)throw 0;return exS((await r.json()).contents);},
+    async function(){
+      const r=await fetch(ao1+encodeURIComponent(stU),{signal:AbortSignal.timeout(12000)});
+      if(!r.ok)throw 0;
+      return exS((await r.json()).contents);
+    },
     // Stooq via allorigins /raw
-    async function(){const r=await fetch(ao2+encodeURIComponent(stU),{signal:AbortSignal.timeout(12000)});if(!r.ok)throw 0;return exS(await r.text());},
+    async function(){
+      const r=await fetch(ao2+encodeURIComponent(stU),{signal:AbortSignal.timeout(12000)});
+      if(!r.ok)throw 0;
+      return exS(await r.text());
+    },
     // Stooq via corsproxy.io
-    async function(){const r=await fetch(cp+encodeURIComponent(stU),{signal:AbortSignal.timeout(12000)});if(!r.ok)throw 0;return exS(await r.text());},
+    async function(){
+      const r=await fetch(cp+encodeURIComponent(stU),{signal:AbortSignal.timeout(12000)});
+      if(!r.ok)throw 0;
+      return exS(await r.text());
+    },
     // Direct attempts last (work locally / when CORS is open)
-    async function(){const r=await fetch(yU1,{signal:AbortSignal.timeout(5000)});if(!r.ok)throw 0;return exC(await r.json());},
-    async function(){const r=await fetch(stU,{signal:AbortSignal.timeout(6000)});if(!r.ok)throw 0;return exS(await r.text());},
+    async function(){
+      const r=await fetch(yU1,{signal:AbortSignal.timeout(5000)});
+      if(!r.ok)throw 0;
+      return exC(await r.json());
+    },
+    async function(){
+      const r=await fetch(stU,{signal:AbortSignal.timeout(6000)});
+      if(!r.ok)throw 0;
+      return exS(await r.text());
+    },
   ];
 
   for(const fn of attempts){
@@ -3696,7 +3745,7 @@ window.addEventListener('resize',function(){
       <div><div class="plus-sheet-name">Importer</div><div class="plus-sheet-desc">Charger un fichier JSON</div></div>
     </div>
     <input type="file" id="importFileMob" accept=".json" style="display:none" onchange="importData(event)">
-    <div style="padding:14px 22px 4px;font-size:10px;color:var(--text-muted);font-family:var(--fm);text-align:center">© 2026 r00tp · v1.22</div>
+    <div style="padding:14px 22px 4px;font-size:10px;color:var(--text-muted);font-family:var(--fm);text-align:center">© 2026 r00tp · v1.23</div>
   </div>
 </div>
 
