@@ -620,7 +620,7 @@ tr.clickable:hover td{background:rgba(255,255,255,.015);cursor:default}
         <span>💾</span><span>Sauvegarder</span>
       </button>
     </div>
-    <div style="font-size:10px;color:var(--text-muted);font-family:var(--fm);letter-spacing:.06em">© 2026 r00tp &nbsp;·&nbsp; v1.27</div>
+    <div style="font-size:10px;color:var(--text-muted);font-family:var(--fm);letter-spacing:.06em">© 2026 r00tp &nbsp;·&nbsp; v1.28</div>
   </div>
   </div>
 
@@ -853,7 +853,42 @@ tr.clickable:hover td{background:rgba(255,255,255,.015);cursor:default}
 // S&P 500 MONTHLY DATA
 // ════════════════════════════════════════════════════
 const SP500={'2020-01':3225,'2020-02':2954,'2020-03':2585,'2020-04':2912,'2020-05':3044,'2020-06':3100,'2020-07':3271,'2020-08':3500,'2020-09':3363,'2020-10':3269,'2020-11':3621,'2020-12':3756,'2021-01':3714,'2021-02':3811,'2021-03':3972,'2021-04':4181,'2021-05':4204,'2021-06':4297,'2021-07':4395,'2021-08':4523,'2021-09':4307,'2021-10':4605,'2021-11':4567,'2021-12':4766,'2022-01':4515,'2022-02':4373,'2022-03':4530,'2022-04':4131,'2022-05':4132,'2022-06':3785,'2022-07':4130,'2022-08':4109,'2022-09':3586,'2022-10':3901,'2022-11':4080,'2022-12':3839,'2023-01':4076,'2023-02':3970,'2023-03':4109,'2023-04':4169,'2023-05':4179,'2023-06':4450,'2023-07':4588,'2023-08':4507,'2023-09':4288,'2023-10':4193,'2023-11':4567,'2023-12':4769,'2024-01':4845,'2024-02':5137,'2024-03':5254,'2024-04':5035,'2024-05':5277,'2024-06':5460,'2024-07':5522,'2024-08':5648,'2024-09':5762,'2024-10':5705,'2024-11':6032,'2024-12':5881,'2025-01':5996,'2025-02':5954,'2025-03':5611,'2025-04':5205,'2025-05':5350,'2025-06':5480,'2025-07':5620,'2025-08':5700,'2025-09':5780,'2025-10':5830,'2025-11':5920,'2025-12':5990,'2026-01':5950,'2026-02':5870,'2026-03':5820};
-function getSP500(d){const ym=d.slice(0,7);if(SP500[ym])return SP500[ym];const k=Object.keys(SP500).sort();let l=null;for(const x of k)if(x<=ym)l=SP500[x];return l;}
+// S&P 500 : cours journaliers réels (Yahoo ^GSPC via proxy), cache 6 h, repli sur la table mensuelle statique
+const SP_CACHE_KEY='orion_sp500_cache';
+let spLive=[]; // [[YYYY-MM-DD, close], ...] trié
+function spLoadCache(){try{const c=JSON.parse(localStorage.getItem(SP_CACHE_KEY)||'null');if(c&&Array.isArray(c.data)&&c.data.length){spLive=c.data;return c.ts||0;}}catch(e){}return 0;}
+async function spRefresh(force){
+  const ts=spLoadCache();
+  if(!force&&ts&&Date.now()-ts<6*3600*1000)return;
+  const y='https://query2.finance.yahoo.com/v8/finance/chart/%5EGSPC?interval=1d&range=10y';
+  const wp='https://orion-proxy.nn9f52rckv.workers.dev/?url=';
+  for(const src of [wp+encodeURIComponent(y),y]){
+    try{
+      const r=await fetch(src,{signal:AbortSignal.timeout(15000)});
+      if(!r.ok)throw 0;
+      const j=await r.json();
+      const res=j&&j.chart&&j.chart.result&&j.chart.result[0];
+      const t=res&&res.timestamp,c=res&&res.indicators&&res.indicators.quote&&res.indicators.quote[0]&&res.indicators.quote[0].close;
+      if(!t||!c)throw 0;
+      const out=[];
+      for(let i=0;i<t.length;i++){if(c[i]!=null&&c[i]>0)out.push([new Date(t[i]*1000).toISOString().slice(0,10),c[i]]);}
+      if(out.length<2)throw 0;
+      spLive=out;
+      try{localStorage.setItem(SP_CACHE_KEY,JSON.stringify({ts:Date.now(),data:out}));}catch(e){}
+      if(typeof renderPerfChart==='function')renderPerfChart();
+      return;
+    }catch(e){}
+  }
+}
+function getSP500(d){
+  if(spLive.length){
+    let lo=0,hi=spLive.length-1,res=null;
+    while(lo<=hi){const m=(lo+hi)>>1;if(spLive[m][0]<=d){res=spLive[m][1];lo=m+1;}else hi=m-1;}
+    if(res==null)res=spLive[0][1];
+    return res;
+  }
+  const ym=d.slice(0,7);if(SP500[ym])return SP500[ym];const k=Object.keys(SP500).sort();let l=null;for(const x of k)if(x<=ym)l=SP500[x];return l;
+}
 
 // ════════════════════════════════════════════════════
 // COINGECKO ID MAP  (symbole → id coingecko)
@@ -2099,9 +2134,9 @@ function triggerSaveReminder(){
 // ════════════════════════════════════════════════════
 function autoSnapshot(){
   const today=new Date().toISOString().split('T')[0];
-  const{totalNet,byCat}=compute();
+  const{totalNet,byCat,totalInvested,trackedValue}=compute();
   if(data.assets.length===0)return;
-  const snap={date:today,total:totalNet,byCat:{}};
+  const snap={date:today,total:totalNet,invested:totalInvested,tracked:trackedValue,byCat:{}};
   for(const[k,v]of Object.entries(byCat))snap.byCat[k]=v.value;
   const idx=data.snapshots.findIndex(s=>s.date===today);
   if(idx>=0)data.snapshots[idx]=snap; else data.snapshots.push(snap);
@@ -2170,18 +2205,29 @@ function renderEvoChart(){
 }
 
 function renderPerfChart(){
-  const snaps=filterSnaps(perfPeriod);
+  // Performance = rendement (+/- value) uniquement, neutre vis-à-vis des apports/retraits :
+  // à chaque snapshot, variation de (valeur − investi) rapportée à la valeur précédente, chaînée en base 100.
+  const all=filterSnaps(perfPeriod).filter(s=>typeof s.invested==='number'&&typeof s.tracked==='number');
   const wrap=document.getElementById('perf-wrap'),no=document.getElementById('perf-no-data'),co=document.getElementById('perf-callouts');
-  if(snaps.length<2){wrap.style.display='none';no.style.display='block';co.innerHTML='';return;}
+  if(all.length<2){wrap.style.display='none';no.style.display='block';co.innerHTML='';return;}
   wrap.style.display='block';no.style.display='none';
+  const snaps=all;
+  const idx=[100];
+  for(let i=1;i<snaps.length;i++){
+    const p=snaps[i-1],c=snaps[i];
+    const dPnl=(c.tracked-c.invested)-(p.tracked-p.invested);
+    const r=p.tracked>0?dPnl/p.tracked:0;
+    idx.push(idx[i-1]*(1+r));
+  }
   const base=snaps[0],last=snaps[snaps.length-1];
   const baseSP=getSP500(base.date)||1,lastSP=getSP500(last.date)||baseSP;
-  const uPerf=base.total>0?((last.total-base.total)/base.total*100):0;
+  const uPerf=idx[idx.length-1]-100;
   const spPerf=((lastSP-baseSP)/baseSP*100),alpha=uPerf-spPerf;
-  co.innerHTML=`<div class="perf-callout"><div class="perf-callout-label">Mon patrimoine</div><div class="perf-callout-value" style="color:${uPerf>=0?'var(--green)':'var(--red)'}">${fmtPct(uPerf)}</div><div class="perf-callout-sub">${fmt(base.total)} → ${fmt(last.total)}</div></div><div class="perf-callout"><div class="perf-callout-label">S&P 500</div><div class="perf-callout-value" style="color:var(--sp500)">${fmtPct(spPerf)}</div><div class="perf-callout-sub">${Math.round(baseSP)} → ${Math.round(lastSP)} pts</div></div><div class="perf-callout" style="border-left:3px solid ${alpha>=0?'var(--green)':'var(--red)'}"><div class="perf-callout-label">Alpha</div><div class="perf-callout-value" style="color:${alpha>=0?'var(--green)':'var(--red)'}">${fmtPct(alpha)}</div><div class="perf-callout-sub">${alpha>=0?'Surperformance':'Sous-performance'}</div></div>`;
+  const pnlB=base.tracked-base.invested,pnlL=last.tracked-last.invested;
+  co.innerHTML=`<div class="perf-callout"><div class="perf-callout-label">Mon portefeuille (+/- value)</div><div class="perf-callout-value" style="color:${uPerf>=0?'var(--green)':'var(--red)'}">${fmtPct(uPerf)}</div><div class="perf-callout-sub">+/- value : ${fmt(pnlB)} → ${fmt(pnlL)}</div></div><div class="perf-callout"><div class="perf-callout-label">S&P 500</div><div class="perf-callout-value" style="color:var(--sp500)">${fmtPct(spPerf)}</div><div class="perf-callout-sub">${Math.round(baseSP)} → ${Math.round(lastSP)} pts</div></div><div class="perf-callout" style="border-left:3px solid ${alpha>=0?'var(--green)':'var(--red)'}"><div class="perf-callout-label">Alpha</div><div class="perf-callout-value" style="color:${alpha>=0?'var(--green)':'var(--red)'}">${fmtPct(alpha)}</div><div class="perf-callout-sub">${alpha>=0?'Surperformance':'Sous-performance'}</div></div>`;
   const ctx=document.getElementById('perf-chart').getContext('2d');
   if(perfChart)perfChart.destroy();
-  perfChart=new Chart(ctx,{type:'line',data:{labels:snaps.map(s=>ld(s.date)),datasets:[{label:'Mon patrimoine',data:snaps.map(s=>base.total>0?(s.total/base.total*100):100),borderColor:'#c9a84c',backgroundColor:'rgba(201,168,76,.07)',borderWidth:2.5,pointRadius:snaps.length>40?0:3,pointHoverRadius:5,fill:true,tension:.35},{label:'S&P 500',data:snaps.map(s=>{const v=getSP500(s.date);return v?(v/baseSP*100):100;}),borderColor:'#38bdf8',backgroundColor:'rgba(56,189,248,.04)',borderWidth:1.5,pointRadius:0,borderDash:[6,3],fill:false,tension:.35}]},options:{...bOpts,plugins:{...bOpts.plugins,tooltip:{...ttBase,callbacks:{label:c=>{const d=(c.raw-100).toFixed(2);return ` ${c.dataset.label} : ${c.raw.toFixed(1)} (${d>=0?'+':''}${d}%)`;} }}},scales:{x:{...scBase},y:{...scBase,ticks:{...scBase.ticks,callback:v=>v.toFixed(0)}}}}});
+  perfChart=new Chart(ctx,{type:'line',data:{labels:snaps.map(s=>ld(s.date)),datasets:[{label:'Mon portefeuille',data:idx,borderColor:'#c9a84c',backgroundColor:'rgba(201,168,76,.07)',borderWidth:2.5,pointRadius:snaps.length>40?0:3,pointHoverRadius:5,fill:true,tension:.35},{label:'S&P 500',data:snaps.map(s=>{const v=getSP500(s.date);return v?(v/baseSP*100):100;}),borderColor:'#38bdf8',backgroundColor:'rgba(56,189,248,.04)',borderWidth:1.5,pointRadius:0,borderDash:[6,3],fill:false,tension:.35}]},options:{...bOpts,plugins:{...bOpts.plugins,tooltip:{...ttBase,callbacks:{label:c=>{const d=(c.raw-100).toFixed(2);return ` ${c.dataset.label} : ${c.raw.toFixed(1)} (${d>=0?'+':''}${d}%)`;} }}},scales:{x:{...scBase},y:{...scBase,ticks:{...scBase.ticks,callback:v=>v.toFixed(0)}}}}});
 }
 
 function renderDonut(byCat){
@@ -3679,6 +3725,7 @@ loadPriceCache();
 loadDivCache();
 gdriveInit();
 autoSnapshot();
+spLoadCache();spRefresh(false);
 // Show sync reminder if Drive is configured but not connected
 if(gdriveClientId && !gdriveIsConnected()){
   setTimeout(function(){ showBanner('sync', 3000); }, 1200);
@@ -3742,7 +3789,7 @@ window.addEventListener('resize',function(){
       <div><div class="plus-sheet-name">Importer</div><div class="plus-sheet-desc">Charger un fichier JSON</div></div>
     </div>
     <input type="file" id="importFileMob" accept=".json" style="display:none" onchange="importData(event)">
-    <div style="padding:14px 22px 4px;font-size:10px;color:var(--text-muted);font-family:var(--fm);text-align:center">© 2026 r00tp · v1.27</div>
+    <div style="padding:14px 22px 4px;font-size:10px;color:var(--text-muted);font-family:var(--fm);text-align:center">© 2026 r00tp · v1.28</div>
   </div>
 </div>
 
