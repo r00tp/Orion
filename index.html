@@ -67,6 +67,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:14px
 /* KPI */
 .kpi-row{display:grid;gap:14px;margin-bottom:20px}
 .kpi-5{grid-template-columns:2fr 1fr 1fr 1fr 1fr}
+.kpi-7{grid-template-columns:1.6fr repeat(6,minmax(0,1fr))}
+.kpi-7 .kpi-card:not(.primary){padding:20px 16px}
 .kpi-4{grid-template-columns:1fr 1fr 1fr 1fr}
 .kpi-3{grid-template-columns:1fr 1fr 1fr}
 .kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 22px;position:relative;overflow:hidden}
@@ -285,7 +287,7 @@ tr.clickable:hover td{background:rgba(255,255,255,.015);cursor:default}
   .sidebar-footer{display:none}
 
   /* ── KPI grids ── */
-  .kpi-5,.kpi-4,.kpi-3{grid-template-columns:1fr 1fr !important}
+  .kpi-7,.kpi-5,.kpi-4,.kpi-3{grid-template-columns:1fr 1fr !important}
   .kpi-card.primary{grid-column:1 / -1}
   .kpi-card.primary .kpi-value{font-size:30px}
   .kpi-value{font-size:22px !important}
@@ -549,13 +551,14 @@ tr.clickable:hover td{background:rgba(255,255,255,.015);cursor:default}
         </div>
       </div>
     </div>
-    <div class="kpi-row kpi-5">
+    <div class="kpi-row kpi-7">
       <div class="kpi-card primary"><div class="kpi-label">Patrimoine net total</div><div class="kpi-value" id="kpi-total">0 €</div><div class="kpi-sub" id="kpi-brut"></div></div>
       <div class="kpi-card"><div class="kpi-accent" style="background:var(--immo)"></div><div class="kpi-label">Immobilier</div><div class="kpi-value" id="kpi-immo" style="font-size:22px">0 €</div><div class="kpi-delta" id="kpi-immo-d" style="display:none"></div></div>
       <div class="kpi-card"><div class="kpi-accent" style="background:var(--bourse)"></div><div class="kpi-label">Bourse</div><div class="kpi-value" id="kpi-bourse" style="font-size:22px">0 €</div><div class="kpi-delta" id="kpi-bourse-d" style="display:none"></div></div>
       <div class="kpi-card"><div class="kpi-accent" style="background:var(--crypto)"></div><div class="kpi-label">Crypto</div><div class="kpi-value" id="kpi-crypto" style="font-size:22px">0 €</div><div class="kpi-delta" id="kpi-crypto-d" style="display:none"></div></div>
       <div class="kpi-card"><div class="kpi-accent" style="background:var(--epargne)"></div><div class="kpi-label">Épargne</div><div class="kpi-value" id="kpi-epargne" style="font-size:22px">0 €</div><div class="kpi-delta" id="kpi-epargne-d" style="display:none"></div></div>
       <div class="kpi-card"><div class="kpi-accent" style="background:var(--pe)"></div><div class="kpi-label">Private Equity</div><div class="kpi-value" id="kpi-pe" style="font-size:22px">0 €</div><div class="kpi-delta" id="kpi-pe-d" style="display:none"></div></div>
+      <div class="kpi-card"><div class="kpi-accent" style="background:var(--autre)"></div><div class="kpi-label">Autres</div><div class="kpi-value" id="kpi-autre" style="font-size:22px">0 €</div><div class="kpi-delta" id="kpi-autre-d" style="display:none"></div></div>
     </div>
     <div class="grid-2" style="margin-bottom:16px">
       <div class="panel" style="margin-bottom:0">
@@ -617,7 +620,7 @@ tr.clickable:hover td{background:rgba(255,255,255,.015);cursor:default}
         <span>💾</span><span>Sauvegarder</span>
       </button>
     </div>
-    <div style="font-size:10px;color:var(--text-muted);font-family:var(--fm);letter-spacing:.06em">© 2026 r00tp &nbsp;·&nbsp; v1.24</div>
+    <div style="font-size:10px;color:var(--text-muted);font-family:var(--fm);letter-spacing:.06em">© 2026 r00tp &nbsp;·&nbsp; v1.25</div>
   </div>
   </div>
 
@@ -2421,7 +2424,7 @@ function renderAll(){
   document.getElementById('kpi-total').textContent=fmt(totalNet);
   document.getElementById('kpi-brut').textContent=`Brut : ${fmt(totalBrut)} — Dettes : ${fmt(totalDettes)}`;
   const sk=(vId,dId,cat)=>{const c=byCat[cat]||{value:0,invested:0};document.getElementById(vId).textContent=fmt(c.value);const el=document.getElementById(dId);if(c.invested>0){const p=((c.value-c.invested)/c.invested)*100;el.className='kpi-delta '+(p>=0?'pos':'neg');el.textContent=fmtPct(p)+(p>=0?' ↑':' ↓');el.style.display='inline-flex';}else el.style.display='none';};
-  sk('kpi-immo','kpi-immo-d','immo');sk('kpi-bourse','kpi-bourse-d','bourse');sk('kpi-crypto','kpi-crypto-d','crypto');sk('kpi-epargne','kpi-epargne-d','epargne');
+  sk('kpi-immo','kpi-immo-d','immo');sk('kpi-bourse','kpi-bourse-d','bourse');sk('kpi-crypto','kpi-crypto-d','crypto');sk('kpi-epargne','kpi-epargne-d','epargne');sk('kpi-autre','kpi-autre-d','autre');
   renderDonut(byCat);
   const leg=document.getElementById('alloc-legend');leg.innerHTML='';
   Object.entries(byCat).filter(([,v])=>v.value>0).sort(([,a],[,b])=>b.value-a.value).forEach(([k,v])=>{const pct=totalBrut>0?(v.value/totalBrut*100).toFixed(1):0;leg.innerHTML+=`<div class="alloc-item" onclick="showSection('${k}',null)"><div class="alloc-dot" style="background:${CATS[k].color}"></div><div class="alloc-name">${CATS[k].icon} ${CATS[k].label}</div><div class="alloc-amount">${fmt(v.value)}</div><div class="alloc-pct">${pct}%</div></div>`;});
@@ -3729,7 +3732,7 @@ window.addEventListener('resize',function(){
       <div><div class="plus-sheet-name">Importer</div><div class="plus-sheet-desc">Charger un fichier JSON</div></div>
     </div>
     <input type="file" id="importFileMob" accept=".json" style="display:none" onchange="importData(event)">
-    <div style="padding:14px 22px 4px;font-size:10px;color:var(--text-muted);font-family:var(--fm);text-align:center">© 2026 r00tp · v1.24</div>
+    <div style="padding:14px 22px 4px;font-size:10px;color:var(--text-muted);font-family:var(--fm);text-align:center">© 2026 r00tp · v1.25</div>
   </div>
 </div>
 
