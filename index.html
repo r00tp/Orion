@@ -553,11 +553,11 @@ tr.clickable:hover td{background:rgba(255,255,255,.015);cursor:default}
     </div>
     <div class="kpi-row kpi-7">
       <div class="kpi-card primary"><div class="kpi-label">Patrimoine net total</div><div class="kpi-value" id="kpi-total">0 €</div><div class="kpi-sub" id="kpi-brut"></div></div>
-      <div class="kpi-card"><div class="kpi-accent" style="background:var(--immo)"></div><div class="kpi-label">Immobilier</div><div class="kpi-value" id="kpi-immo" style="font-size:22px">0 €</div><div class="kpi-delta" id="kpi-immo-d" style="display:none"></div></div>
       <div class="kpi-card"><div class="kpi-accent" style="background:var(--bourse)"></div><div class="kpi-label">Bourse</div><div class="kpi-value" id="kpi-bourse" style="font-size:22px">0 €</div><div class="kpi-delta" id="kpi-bourse-d" style="display:none"></div></div>
       <div class="kpi-card"><div class="kpi-accent" style="background:var(--crypto)"></div><div class="kpi-label">Crypto</div><div class="kpi-value" id="kpi-crypto" style="font-size:22px">0 €</div><div class="kpi-delta" id="kpi-crypto-d" style="display:none"></div></div>
-      <div class="kpi-card"><div class="kpi-accent" style="background:var(--epargne)"></div><div class="kpi-label">Épargne</div><div class="kpi-value" id="kpi-epargne" style="font-size:22px">0 €</div><div class="kpi-delta" id="kpi-epargne-d" style="display:none"></div></div>
       <div class="kpi-card"><div class="kpi-accent" style="background:var(--pe)"></div><div class="kpi-label">Private Equity</div><div class="kpi-value" id="kpi-pe" style="font-size:22px">0 €</div><div class="kpi-delta" id="kpi-pe-d" style="display:none"></div></div>
+      <div class="kpi-card"><div class="kpi-accent" style="background:var(--epargne)"></div><div class="kpi-label">Épargne</div><div class="kpi-value" id="kpi-epargne" style="font-size:22px">0 €</div><div class="kpi-delta" id="kpi-epargne-d" style="display:none"></div></div>
+      <div class="kpi-card"><div class="kpi-accent" style="background:var(--immo)"></div><div class="kpi-label">Immobilier</div><div class="kpi-value" id="kpi-immo" style="font-size:22px">0 €</div><div class="kpi-delta" id="kpi-immo-d" style="display:none"></div></div>
       <div class="kpi-card"><div class="kpi-accent" style="background:var(--autre)"></div><div class="kpi-label">Autres</div><div class="kpi-value" id="kpi-autre" style="font-size:22px">0 €</div><div class="kpi-delta" id="kpi-autre-d" style="display:none"></div></div>
     </div>
     <div class="grid-2" style="margin-bottom:16px">
@@ -620,7 +620,7 @@ tr.clickable:hover td{background:rgba(255,255,255,.015);cursor:default}
         <span>💾</span><span>Sauvegarder</span>
       </button>
     </div>
-    <div style="font-size:10px;color:var(--text-muted);font-family:var(--fm);letter-spacing:.06em">© 2026 r00tp &nbsp;·&nbsp; v1.25</div>
+    <div style="font-size:10px;color:var(--text-muted);font-family:var(--fm);letter-spacing:.06em">© 2026 r00tp &nbsp;·&nbsp; v1.26</div>
   </div>
   </div>
 
@@ -2130,6 +2130,11 @@ function compute(){
     const v=assetValue(a),inv=assetInvested(a);
     byCat[a.cat].value+=v;byCat[a.cat].invested+=inv;byCat[a.cat].count++;
     totalBrut+=v;
+  }
+  // Private Equity : valorisation = NAV des deals, investi = capital appelé
+  if(data.peDeals&&data.peDeals.length){
+    const nav=data.peDeals.reduce((s,d)=>s+(d.nav||0),0),called=data.peDeals.reduce((s,d)=>s+(d.calledCapital||0),0);
+    if(nav>0||called>0){byCat.pe={value:nav,invested:called,count:data.peDeals.length};totalBrut+=nav;}
   }
   return{totalBrut,totalDettes,totalNet:totalBrut-totalDettes,byCat};
 }
@@ -3732,7 +3737,7 @@ window.addEventListener('resize',function(){
       <div><div class="plus-sheet-name">Importer</div><div class="plus-sheet-desc">Charger un fichier JSON</div></div>
     </div>
     <input type="file" id="importFileMob" accept=".json" style="display:none" onchange="importData(event)">
-    <div style="padding:14px 22px 4px;font-size:10px;color:var(--text-muted);font-family:var(--fm);text-align:center">© 2026 r00tp · v1.25</div>
+    <div style="padding:14px 22px 4px;font-size:10px;color:var(--text-muted);font-family:var(--fm);text-align:center">© 2026 r00tp · v1.26</div>
   </div>
 </div>
 
