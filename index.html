@@ -552,7 +552,7 @@ tr.clickable:hover td{background:rgba(255,255,255,.015);cursor:default}
       </div>
     </div>
     <div class="kpi-row kpi-7">
-      <div class="kpi-card primary"><div class="kpi-label">Patrimoine net total</div><div class="kpi-value" id="kpi-total">0 €</div><div class="kpi-sub" id="kpi-brut"></div></div>
+      <div class="kpi-card primary"><div class="kpi-label">Patrimoine net total</div><div class="kpi-value" id="kpi-total">0 €</div><div class="kpi-sub" id="kpi-brut"></div><div class="kpi-delta" id="kpi-total-d" style="display:none;margin-top:8px"></div></div>
       <div class="kpi-card"><div class="kpi-accent" style="background:var(--bourse)"></div><div class="kpi-label">Bourse</div><div class="kpi-value" id="kpi-bourse" style="font-size:22px">0 €</div><div class="kpi-delta" id="kpi-bourse-d" style="display:none"></div></div>
       <div class="kpi-card"><div class="kpi-accent" style="background:var(--crypto)"></div><div class="kpi-label">Crypto</div><div class="kpi-value" id="kpi-crypto" style="font-size:22px">0 €</div><div class="kpi-delta" id="kpi-crypto-d" style="display:none"></div></div>
       <div class="kpi-card"><div class="kpi-accent" style="background:var(--pe)"></div><div class="kpi-label">Private Equity</div><div class="kpi-value" id="kpi-pe" style="font-size:22px">0 €</div><div class="kpi-delta" id="kpi-pe-d" style="display:none"></div></div>
@@ -620,7 +620,7 @@ tr.clickable:hover td{background:rgba(255,255,255,.015);cursor:default}
         <span>💾</span><span>Sauvegarder</span>
       </button>
     </div>
-    <div style="font-size:10px;color:var(--text-muted);font-family:var(--fm);letter-spacing:.06em">© 2026 r00tp &nbsp;·&nbsp; v1.26</div>
+    <div style="font-size:10px;color:var(--text-muted);font-family:var(--fm);letter-spacing:.06em">© 2026 r00tp &nbsp;·&nbsp; v1.27</div>
   </div>
   </div>
 
@@ -2136,7 +2136,10 @@ function compute(){
     const nav=data.peDeals.reduce((s,d)=>s+(d.nav||0),0),called=data.peDeals.reduce((s,d)=>s+(d.calledCapital||0),0);
     if(nav>0||called>0){byCat.pe={value:nav,invested:called,count:data.peDeals.length};totalBrut+=nav;}
   }
-  return{totalBrut,totalDettes,totalNet:totalBrut-totalDettes,byCat};
+  // Montant investi + valeur des positions suivies (investi > 0) pour une performance cohérente
+  let totalInvested=0,trackedValue=0;
+  for(const c of Object.values(byCat)){if(c.invested>0){totalInvested+=c.invested;trackedValue+=c.value;}}
+  return{totalBrut,totalDettes,totalNet:totalBrut-totalDettes,totalInvested,trackedValue,byCat};
 }
 
 // ════════════════════════════════════════════════════
@@ -2424,10 +2427,12 @@ function switchSecTab(cat,tab,btn){
 // RENDER ALL
 // ════════════════════════════════════════════════════
 function renderAll(){
-  const{totalBrut,totalDettes,totalNet,byCat}=compute();
+  const{totalBrut,totalDettes,totalNet,totalInvested,trackedValue,byCat}=compute();
   document.getElementById('today-date').textContent=new Date().toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   document.getElementById('kpi-total').textContent=fmt(totalNet);
-  document.getElementById('kpi-brut').textContent=`Brut : ${fmt(totalBrut)} — Dettes : ${fmt(totalDettes)}`;
+  document.getElementById('kpi-brut').textContent=`Investi : ${fmt(totalInvested)}`+(totalDettes>0?` — Dettes : ${fmt(totalDettes)}`:'');
+  const totD=document.getElementById('kpi-total-d');
+  if(totD){if(totalInvested>0){const p=((trackedValue-totalInvested)/totalInvested)*100;totD.className='kpi-delta '+(p>=0?'pos':'neg');totD.textContent=fmtPct(p)+(p>=0?' ↑':' ↓');totD.style.display='inline-flex';}else totD.style.display='none';}
   const sk=(vId,dId,cat)=>{const c=byCat[cat]||{value:0,invested:0};document.getElementById(vId).textContent=fmt(c.value);const el=document.getElementById(dId);if(c.invested>0){const p=((c.value-c.invested)/c.invested)*100;el.className='kpi-delta '+(p>=0?'pos':'neg');el.textContent=fmtPct(p)+(p>=0?' ↑':' ↓');el.style.display='inline-flex';}else el.style.display='none';};
   sk('kpi-immo','kpi-immo-d','immo');sk('kpi-bourse','kpi-bourse-d','bourse');sk('kpi-crypto','kpi-crypto-d','crypto');sk('kpi-epargne','kpi-epargne-d','epargne');sk('kpi-autre','kpi-autre-d','autre');
   renderDonut(byCat);
@@ -3737,7 +3742,7 @@ window.addEventListener('resize',function(){
       <div><div class="plus-sheet-name">Importer</div><div class="plus-sheet-desc">Charger un fichier JSON</div></div>
     </div>
     <input type="file" id="importFileMob" accept=".json" style="display:none" onchange="importData(event)">
-    <div style="padding:14px 22px 4px;font-size:10px;color:var(--text-muted);font-family:var(--fm);text-align:center">© 2026 r00tp · v1.26</div>
+    <div style="padding:14px 22px 4px;font-size:10px;color:var(--text-muted);font-family:var(--fm);text-align:center">© 2026 r00tp · v1.27</div>
   </div>
 </div>
 
