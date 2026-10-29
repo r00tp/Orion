@@ -620,7 +620,7 @@ tr.clickable:hover td{background:rgba(255,255,255,.015);cursor:default}
         <span>💾</span><span>Sauvegarder</span>
       </button>
     </div>
-    <div style="font-size:10px;color:var(--text-muted);font-family:var(--fm);letter-spacing:.06em">© 2026 r00tp &nbsp;·&nbsp; v1.28</div>
+    <div style="font-size:10px;color:var(--text-muted);font-family:var(--fm);letter-spacing:.06em">© 2026 r00tp &nbsp;·&nbsp; v1.29</div>
   </div>
   </div>
 
@@ -2173,7 +2173,8 @@ function compute(){
   }
   // Montant investi + valeur des positions suivies (investi > 0) pour une performance cohérente
   let totalInvested=0,trackedValue=0;
-  for(const c of Object.values(byCat)){if(c.invested>0){totalInvested+=c.invested;trackedValue+=c.value;}}
+  // Seules les catégories de marché (Bourse, Crypto, Private Equity) entrent dans investi / performance
+  for(const k of ['bourse','crypto','pe']){const c=byCat[k];if(c&&c.invested>0){totalInvested+=c.invested;trackedValue+=c.value;}}
   return{totalBrut,totalDettes,totalNet:totalBrut-totalDettes,totalInvested,trackedValue,byCat};
 }
 
@@ -2577,7 +2578,7 @@ function renderAutre(stats,totalBrut){
   const pct=totalBrut>0?(stats.value/totalBrut*100).toFixed(1):0;
   const pl=stats.invested>0?stats.value-stats.invested:null,plP=stats.invested>0?((stats.value-stats.invested)/stats.invested*100):null;
   const ALAB={vehicle:'Véhicule',art:'Art & Collections',metals:'Métaux précieux',jewelry:'Bijoux',pe:'Private equity',other:'Autre'};
-  el.innerHTML=`<div class="cat-header"><div class="cat-icon-big" style="background:#a855f722">✦</div><div><div class="cat-title-big" style="color:var(--autre)">Autres actifs</div><div class="topbar-date">Métaux, art, véhicules, PE…</div></div><button class="btn btn-gold ml-auto mob-hide-on-mobile" onclick="openAddAsset('autre')">+ Ajouter</button></div>
+  el.innerHTML=`<div class="cat-header"><div class="cat-icon-big" style="background:#a855f722">✦</div><div><div class="cat-title-big" style="color:var(--autre)">Autres actifs</div><div class="topbar-date">Métaux, art, véhicules…</div></div><button class="btn btn-gold ml-auto mob-hide-on-mobile" onclick="openAddAsset('autre')">+ Ajouter</button></div>
   ${searchBar('autre',allAu.length,assets.length)}
   <div class="kpi-row kpi-4" style="margin-bottom:20px"><div class="kpi-card"><div class="kpi-label">Valeur totale</div><div class="kpi-value" style="font-size:26px">${fmt(stats.value)}</div></div><div class="kpi-card"><div class="kpi-label">Investi</div><div class="kpi-value" style="font-size:26px;color:var(--text-dim)">${stats.invested>0?fmt(stats.invested):'—'}</div></div><div class="kpi-card"><div class="kpi-label">+/- value</div><div class="kpi-value" style="font-size:26px;color:${pl===null?'var(--text-dim)':pl>=0?'var(--green)':'var(--red)'}">${pl!==null?(pl>=0?'+':'')+fmt(pl):'—'}</div>${plP!==null?`<div class="kpi-delta ${plP>=0?'pos':'neg'}">${fmtPct(plP)}</div>`:''}</div><div class="kpi-card"><div class="kpi-label">Part patrimoine</div><div class="kpi-value" style="font-size:26px;color:var(--gold)">${pct}%</div></div></div>
   <div class="panel"><div class="panel-header"><span class="panel-title">✦ Inventaire</span></div><div class="panel-body">
@@ -3244,7 +3245,7 @@ function buildEpargneFields(a){const v=a||{};const st=v.subtype||'livreta';
 // AUTRE
 function buildAutreFields(a){const v=a||{};const st=v.subtype||'vehicle';
   return`<div class="fg"><label>Nom / Description</label><input type="text" id="f-name" placeholder="Tesla Model 3, Lingot d'or…" value="${v.name||''}"></div>
-  <div class="fg"><label>Catégorie</label><select id="f-subtype"><option value="vehicle"${st==='vehicle'?' selected':''}>🚗 Véhicule</option><option value="art"${st==='art'?' selected':''}>🎨 Art & Collections</option><option value="metals"${st==='metals'?' selected':''}>🥇 Métaux précieux</option><option value="jewelry"${st==='jewelry'?' selected':''}>💎 Bijoux</option><option value="pe"${st==='pe'?' selected':''}>📊 Private equity</option><option value="other"${st==='other'?' selected':''}>✦ Autre</option></select></div>
+  <div class="fg"><label>Catégorie</label><select id="f-subtype"><option value="vehicle"${st==='vehicle'?' selected':''}>🚗 Véhicule</option><option value="art"${st==='art'?' selected':''}>🎨 Art & Collections</option><option value="metals"${st==='metals'?' selected':''}>🥇 Métaux précieux</option><option value="jewelry"${st==='jewelry'?' selected':''}>💎 Bijoux</option><option value="other"${st==='other'?' selected':''}>✦ Autre</option></select></div>
   <div class="fr2"><div class="fg"><label>Valeur d'achat (€)</label><input type="number" id="f-invested" placeholder="45 000" value="${v.invested||''}"></div><div class="fg"><label>Valeur actuelle estimée (€)</label><input type="number" id="f-value" placeholder="28 000" value="${v.value||''}"></div></div>
   <div class="fr2"><div class="fg"><label>Date d'acquisition</label><input type="date" id="f-date" value="${v.date||''}"></div><div class="fg"><label>Notes</label><input type="text" id="f-notes" placeholder="Kilométrage, état…" value="${v.notes||''}"></div></div>`;}
 
@@ -3789,7 +3790,7 @@ window.addEventListener('resize',function(){
       <div><div class="plus-sheet-name">Importer</div><div class="plus-sheet-desc">Charger un fichier JSON</div></div>
     </div>
     <input type="file" id="importFileMob" accept=".json" style="display:none" onchange="importData(event)">
-    <div style="padding:14px 22px 4px;font-size:10px;color:var(--text-muted);font-family:var(--fm);text-align:center">© 2026 r00tp · v1.28</div>
+    <div style="padding:14px 22px 4px;font-size:10px;color:var(--text-muted);font-family:var(--fm);text-align:center">© 2026 r00tp · v1.29</div>
   </div>
 </div>
 
